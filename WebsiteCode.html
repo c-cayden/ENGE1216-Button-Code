@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Occupancy Display</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: black;
+            color: white;
+            margin-top: 50px;
+        }
+        .status {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 100px;
+        }
+        button {
+            width: 200px;
+            height: 80px;
+            font-size: 24px;
+            border: none;
+            cursor: pointer;
+            border-radius: 20px;
+            background-color: black;
+            color: white;
+            text-transform: uppercase;
+            font-weight: bold;
+            transition: 0.3s;
+            position: relative;
+        }
+        #occupied {
+            border: 3px solid red;
+            box-shadow: 0 0 15px red;
+        }
+        #not-occupied {
+            border: 3px solid green;
+            box-shadow: 0 0 15px green;
+        }
+        .active {
+            box-shadow: 0 0 30px white;
+        }
+        #occupied.active {
+            background-color: red;
+            color: black;
+            box-shadow: 0 0 40px red;
+        }
+        #not-occupied.active {
+            background-color: green;
+            color: black;
+            box-shadow: 0 0 40px green;
+        }
+    </style>
+</head>
+<body>
+    <h1>Occupancy Status</h1>
+    <button onclick="connectBluetooth()">Connect to Bluetooth</button>
+    <div class="status">
+        <button id="occupied">Occupied</button>
+        <button id="not-occupied">Not Occupied</button>
+    </div>
+    
+    <script>
+        let bluetoothDevice;
+        let characteristic;
+
+        async function connectBluetooth() {
+            try {
+                bluetoothDevice = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: ['battery_service'] 
+                });
+                
+                const server = await bluetoothDevice.gatt.connect();
+                const service = await server.getPrimaryService('battery_service'); 
+                characteristic = await service.getCharacteristic('battery_level'); 
+                
+                characteristic.addEventListener('characteristicvaluechanged', handleCharacteristicChange);
+                await characteristic.startNotifications();
+                console.log("Connected to Bluetooth device.");
+            } catch (error) {
+                console.error("Bluetooth connection failed", error);
+            }
+        }
+
+        function handleCharacteristicChange(event) {
+            const value = event.target.value.getUint8(0);
+            updateUI(value);
+        }
+
+        function updateUI(value) {
+            const occupiedBtn = document.getElementById("occupied");
+            const notOccupiedBtn = document.getElementById("not-occupied");
+            
+            if (value === 1) {
+                occupiedBtn.classList.add("active");
+                notOccupiedBtn.classList.remove("active");
+            } else {
+                notOccupiedBtn.classList.add("active");
+                occupiedBtn.classList.remove("active");
+            }
+        }
+    </script>
+</body>
+</html>
