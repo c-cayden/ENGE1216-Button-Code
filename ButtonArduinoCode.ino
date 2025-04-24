@@ -2,14 +2,14 @@ int button = 7;
 int redLED = 13;
 int greenLED = 12;
 
-bool status = false;           // false = not occupied
-bool lastButtonState = HIGH;   // pull-up logic: HIGH = not pressed
-bool lastStatusSent = false;   // used to track what was last sent
+bool status = false;       
+bool lastButtonState = HIGH;   
+bool lastStatusSent = false;   
 
 void setup() {
   pinMode(redLED, OUTPUT);
   pinMode(greenLED, OUTPUT);
-  pinMode(button, INPUT_PULLUP); // button connected to GND
+  pinMode(button, INPUT_PULLUP); 
   Serial.begin(9600);
 
   digitalWrite(greenLED, HIGH);
@@ -18,14 +18,10 @@ void setup() {
 
 void loop() {
   bool currentButtonState = digitalRead(button);
-
-  // Detect falling edge (button just pressed)
   if (lastButtonState == HIGH && currentButtonState == LOW) {
     status = !status; // Toggle the state
     delay(150);       // Debounce
   }
-
-  // Only update outputs and serial if state changed
   if (status != lastStatusSent) {
     if (status) {
       digitalWrite(greenLED, LOW);
