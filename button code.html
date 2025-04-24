@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Occupancy Display</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: black;
+      color: white;
+      margin-top: 50px;
+    }
+    .status {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-top: 100px;
+    }
+    button {
+      width: 200px;
+      height: 80px;
+      font-size: 24px;
+      border: none;
+      cursor: pointer;
+      border-radius: 20px;
+      background-color: black;
+      color: white;
+      text-transform: uppercase;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+    #occupied {
+      border: 3px solid red;
+      box-shadow: 0 0 15px red;
+    }
+    #not-occupied {
+      border: 3px solid green;
+      box-shadow: 0 0 15px green;
+    }
+    .active {
+      box-shadow: 0 0 30px white;
+    }
+    #occupied.active {
+      background-color: red;
+      color: black;
+      box-shadow: 0 0 40px red;
+    }
+    #not-occupied.active {
+      background-color: green;
+      color: black;
+      box-shadow: 0 0 40px green;
+    }
+  </style>
+</head>
+<body>
+  <h1>Occupancy Status</h1>
+  <button id="connectButton">Connect to Arduino</button>
+  <div class="status">
+    <button id="occupied">Occupied</button>
+    <button id="not-occupied">Not Occupied</button>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const connectBtn = document.getElementById("connectButton");
+      const occupiedBtn = document.getElementById("occupied");
+      const notOccupiedBtn = document.getElementById("not-occupied");
+
+      connectBtn.onclick = async () => {
+        try {
+          const port = await navigator.serial.requestPort();
+          await port.open({ baudRate: 9600 });
+
+          const decoder = new TextDecoderStream();
+          const inputDone = port.readable.pipeTo(decoder.writable);
+          const inputStream = decoder.readable;
+          const reader = inputStream.getReader();
+
+          console.log("Connected to Arduino.");
+
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            if (value) {
+              const data = value.trim();
+              console.log("Received:", data);
+
+              const num = parseInt(data);
+              if (num === 1) {
+                occupiedBtn.classList.add("active");
+                notOccupiedBtn.classList.remove("active");
+              } else if (num === 0) {
+                notOccupiedBtn.classList.add("active");
+                occupiedBtn.classList.remove("active");
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Serial connection error:", err);
+        }
+      };
+    });
+  </script>
+</body>
+</html>
